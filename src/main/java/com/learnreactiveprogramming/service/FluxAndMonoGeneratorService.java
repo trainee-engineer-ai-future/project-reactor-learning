@@ -182,7 +182,7 @@ public class FluxAndMonoGeneratorService {
     public Flux<String> exploreMergeWithMono() {
         var aMono = Mono.just("A");
         var bMono = Flux.just("B");
-        return aMono.concatWith(bMono).log();
+        return aMono.mergeWith(bMono).log();
     }
 
     public Flux<String> exploreMergeSequential() {
