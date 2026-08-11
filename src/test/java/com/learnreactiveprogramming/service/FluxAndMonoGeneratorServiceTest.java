@@ -1,5 +1,6 @@
 package com.learnreactiveprogramming.service;
 
+import com.learnreactiveprogramming.exception.ReactorException;
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
@@ -320,5 +321,71 @@ public class FluxAndMonoGeneratorServiceTest {
         StepVerifier.create(namesFluxMap)
             .expectNext("AD", "BE", "CF")
             .verifyComplete();
+    }
+
+    @Test
+    void exceptionFlux() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exceptionFlux();
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A", "B", "C")
+            .verifyError(RuntimeException.class);
+    }
+
+    @Test
+    void exploreOnErrorReturn() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exploreOnErrorReturn();
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A", "B", "C", "D")
+            .verifyComplete();
+    }
+
+    @Test
+    void exploreOnErrorResume() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exploreOnErrorResume(new RuntimeException("test"));
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A", "B", "C", "D", "E", "F")
+            .verifyComplete();
+    }
+
+    @Test
+    void exploreOnErrorContinue() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exploreOnErrorContinue();
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A", "C")
+            .verifyComplete();
+    }
+
+    @Test
+    void exploreOnErrorMap() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exploreOnErrorMap();
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A")
+            .verifyError(ReactorException.class);
+    }
+
+    @Test
+    void exploreDoOnError() {
+        //given
+        //when
+        var exceptionFlux = fluxAndMonoGeneratorService.exploreDoOnError();
+        //then
+        StepVerifier.create(exceptionFlux)
+            .expectNext("A")
+            .verifyError(RuntimeException.class);
     }
 }

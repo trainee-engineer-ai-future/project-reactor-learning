@@ -1,14 +1,16 @@
 package com.learnreactiveprogramming.service;
 
+import com.learnreactiveprogramming.exception.ReactorException;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
+@Slf4j
 public class FluxAndMonoGeneratorService {
 
     public static void main(String[] args) {
@@ -103,6 +105,9 @@ public class FluxAndMonoGeneratorService {
             .map(String::toUpperCase)
             .filter(name -> name.length() > stringLength)
             .concatMap(FluxAndMonoGeneratorService::splitWithDelay)
+            .doOnNext(name -> System.out.println("name is : " + name))
+            .doOnSubscribe(sub -> System.out.println("Subscription is : " + sub))
+            .doFinally(s -> System.out.println("Finally is : " + s))
             .log();
     }
 
@@ -211,6 +216,64 @@ public class FluxAndMonoGeneratorService {
             .delayElements(Duration.ofMillis(100));
         return abcFlux.zipWith(defFlux)
             .map(t -> t.getT1() + t.getT2());
+    }
+
+    public Flux<String> exceptionFlux() {
+        return Flux.just("A", "B", "C")
+            .concatWith(Flux.error(new RuntimeException("error")))
+            .concatWith(Flux.just("D"));
+    }
+
+    public Flux<String> exploreOnErrorReturn() {
+        return Flux.just("A", "B", "C")
+            .concatWith(Flux.error(new IllegalStateException("Exception Occurred")))
+            .onErrorReturn("D");
+    }
+
+    public Flux<String> exploreOnErrorResume(Exception e) {
+        return Flux.just("A", "B", "C")
+            .concatWith(Flux.error(e))
+            .onErrorResume(ex -> {
+                log.error("Exception is ", ex);
+                return Flux.just("D", "E", "F");
+            });
+    }
+
+    public Flux<String> exploreOnErrorContinue() {
+        return Flux.just("A", "B", "C")
+            .map(s -> {
+                if (s.equals("B")) {
+                    throw new IllegalStateException("Exception Occurred");
+                }
+                return s;
+            })
+            .onErrorContinue((ex, value) -> {
+                log.error("Value is {}, Exception is ", value, ex);
+            });
+    }
+
+    public Flux<String> exploreOnErrorMap() {
+        return Flux.just("A", "B", "C")
+            .map(s -> {
+                if (s.equals("B")) {
+                    throw new IllegalStateException("Exception Occurred");
+                }
+                return s;
+            })
+            .onErrorMap(ex -> new ReactorException(ex, ex.getMessage()))
+            .log();
+    }
+
+    public Flux<String> exploreDoOnError() {
+        return Flux.just("A", "B", "C")
+            .map(s -> {
+                if (s.equals("B")) {
+                    throw new IllegalStateException("Exception Occurred");
+                }
+                return s;
+            })
+            .doOnError(ex -> log.error("Exception is ", ex))
+            .log();
     }
 
     private static Flux<String> splitWithDelay(String name) {
