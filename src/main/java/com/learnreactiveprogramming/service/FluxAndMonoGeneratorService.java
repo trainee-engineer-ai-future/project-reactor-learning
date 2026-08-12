@@ -4,6 +4,7 @@ import com.learnreactiveprogramming.exception.ReactorException;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.List;
@@ -15,9 +16,7 @@ public class FluxAndMonoGeneratorService {
 
     public static void main(String[] args) {
         FluxAndMonoGeneratorService fluxAndMonoGeneratorService = new FluxAndMonoGeneratorService();
-        fluxAndMonoGeneratorService.namesFluxMap()
-            .subscribe(name -> System.out.println("name is : " + name));
-        fluxAndMonoGeneratorService.nameMono()
+        fluxAndMonoGeneratorService.namesFluxFilter(4)
             .subscribe(name -> System.out.println("Mono name is : " + name));
     }
 
@@ -79,8 +78,13 @@ public class FluxAndMonoGeneratorService {
     public Flux<String> namesFluxFilter(int stringLength) {
         return Flux.fromIterable(List.of("alex", "ben", "chloe"))
             .map(String::toUpperCase)
-            .filter(name -> name.length() > stringLength)
+            .publishOn(Schedulers.parallel())
+            .filter(name -> {
+                log.info(String.format("Filtering for name %s", name));
+                return name.length() > stringLength;
+            })
             .map(name -> name.length() + " - " + name)
+            .subscribeOn(Schedulers.boundedElastic())
             .log();
     }
 
