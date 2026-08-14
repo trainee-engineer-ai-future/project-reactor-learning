@@ -9,17 +9,29 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-@RequiredArgsConstructor
 @Slf4j
 public class MovieReactiveService {
 
-    private final MovieInfoService movieInfoService;
-    private final ReviewService reviewService;
+    private MovieInfoService movieInfoService;
+    private ReviewService reviewService;
+    private RevenueService revenueService;
+
+    public MovieReactiveService(MovieInfoService movieInfoService, ReviewService reviewService) {
+        this.movieInfoService = movieInfoService;
+        this.reviewService = reviewService;
+    }
+
+    public MovieReactiveService(MovieInfoService movieInfoService, RevenueService revenueService, ReviewService reviewService) {
+        this.movieInfoService = movieInfoService;
+        this.revenueService = revenueService;
+        this.reviewService = reviewService;
+    }
 
     public Flux<Movie> getAllMovies() {
         var movieInfoFlux = movieInfoService.retrievMovieInfoFlux();
@@ -103,6 +115,16 @@ public class MovieReactiveService {
             .flatMap(movieInfo ->
                 reviewService.retrieveReviewsFlux(movieId).collectList()
                     .map(reviews -> new Movie(movieInfo, reviews)));
+    }
+
+    public Mono<Movie> getMovieByIdWithRevenue(Long movieId) {
+        return movieInfoService.retrieveMovieInfoMonoUsingId(movieId)
+            .flatMap(movieInfo ->
+                reviewService.retrieveReviewsFlux(movieId).collectList()
+                    .zipWith(Mono.fromCallable(() -> revenueService.getRevenue(movieId)).subscribeOn(Schedulers.boundedElastic()))
+                    .publishOn(Schedulers.parallel())
+                    .map(tuple -> new Movie(movieInfo, tuple.getT1(), tuple.getT2())))
+            .log();
     }
 
 }
