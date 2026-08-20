@@ -11,9 +11,9 @@ public class HikariPool {
 
     static {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/your_db");
-        config.setUsername("postgres");
-        config.setPassword("password");
+        config.setJdbcUrl("jdbc:postgresql://localhost:5433/orders");
+        config.setUsername("reactor");
+        config.setPassword("reactor");
 
         // Рекомендуемые настройки
         config.setMaximumPoolSize(10);

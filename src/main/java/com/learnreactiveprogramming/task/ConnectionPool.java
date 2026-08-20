@@ -13,9 +13,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionPool {
 
-    private static final String URL = "jdbc:postgresql://localhost:5432/your_db";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "password";
+    private static final String URL = "jdbc:postgresql://localhost:5433/orders";
+    private static final String USER = "reactor";
+    private static final String PASSWORD = "reactor";
 
     private static final BlockingQueue<Connection> pool = new LinkedBlockingQueue<>();
     private static final List<Connection> realConnections = new ArrayList<>();
